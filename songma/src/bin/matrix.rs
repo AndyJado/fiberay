@@ -1,27 +1,28 @@
-use std::env::args;
-
-use pandoc::{OutputKind, PandocOutput};
 use pandoc_ast::Block;
-use songma::doc_reader::{BlockGal, Pan2Str};
+use songma::doc_reader::{pan_read, BlockGal, Pan2Str};
+use std::env::args;
 
 fn main() {
     let args: Vec<String> = args().collect();
-
-    // run actual pandoc, get ast iter
-    let mut pandoc = pandoc::new();
-    pandoc
-        .add_input(&args[1])
-        .set_output(OutputKind::Pipe)
-        .set_output_format(pandoc::OutputFormat::Json, vec![]);
-    let PandocOutput::ToBuffer(json) = pandoc.execute().expect("pandoc should execute") else {
-        panic!("pandoc should gen json ast as buffer")
-    };
-    let ast = pandoc_ast::Pandoc::from_json(&json);
-    // do what we want
-    pan_table(ast, args)
+    let ast = pan_read(&args[1]);
+    let tables: Vec<_> = ast
+        .blocks
+        .into_iter()
+        .filter_map(|b| BlockGal(b).do_table())
+        .collect();
+    for t in &tables {
+        let Some(hed) = t.index(1, 1) else {continue};
+        if hed.contains("item") {
+            for i in 1..=t.col_size {
+                dbg!(t.index(i, 1));
+            }
+        }
+    }
+    // let t_tts = tables.map(|t| t.index(1, 1)).take_while(|s| s.is_some());
 }
 
-fn pan_table(ast: pandoc_ast::Pandoc, args: Vec<String>) {
+/// print table cell at index $2 $3
+pub fn pan_table(ast: pandoc_ast::Pandoc, args: Vec<String>) {
     let mut blocks = ast.blocks.into_iter().peekable();
     let (i, j) = (
         &args[2].parse::<usize>().unwrap(),
@@ -34,13 +35,13 @@ fn pan_table(ast: pandoc_ast::Pandoc, args: Vec<String>) {
         let Some(&Block::Table(..)) = blocks.peek() else { continue };
         let table_title = pre_table_block.to_string();
         let table_block = blocks.next().unwrap();
-        let table = BlockGal(table_block).do_table();
+        let table = BlockGal(table_block).do_table().unwrap();
         dbg!(table_title);
         dbg!(table.index(*i, *j));
         'inner: loop {
             let Some(&Block::Table(..)) = blocks.peek() else { break 'inner };
             let table_block = blocks.next().unwrap();
-            let table = BlockGal(table_block).do_table();
+            let table = BlockGal(table_block).do_table().unwrap();
             // dbg!(table.debugy());
             dbg!(table.index(*i, *j));
         }

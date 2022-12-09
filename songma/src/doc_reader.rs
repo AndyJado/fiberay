@@ -1,7 +1,19 @@
 use pandoc_ast::{Block, Inline};
 
-pub struct BlockGal(pub pandoc_ast::Block);
+pub fn pan_read(p: &str) -> pandoc_ast::Pandoc {
+    let mut pandoc = pandoc::new();
+    pandoc
+        .add_input(&p)
+        .set_output(pandoc::OutputKind::Pipe)
+        .set_output_format(pandoc::OutputFormat::Json, vec![]);
+    let pandoc::PandocOutput::ToBuffer(json) = pandoc.execute().expect("pandoc should execute") else {
+        panic!("pandoc should gen json ast as buffer")
+    };
+    pandoc_ast::Pandoc::from_json(&json)
+}
+
 /// table as a matrix
+#[derive(Debug)]
 pub struct StrTable {
     // row followes a row
     pub stream: Vec<Option<String>>,
@@ -28,15 +40,18 @@ impl StrTable {
     }
 }
 
+pub struct BlockGal(pub pandoc_ast::Block);
+
 impl BlockGal {
     // return a table with matrix index empowered
-    pub fn do_table(self) -> StrTable {
+    pub fn do_table(self) -> Option<StrTable> {
         match self.0 {
             // head.1 & body.i.2&.3 are rows, .2 is empty empirically
             pandoc_ast::Block::Table(_, _, _, head, mut body, _) => {
                 let mut table = Self::rows2vec(head.1);
                 let row_len = table.len();
                 let body = body.pop().expect("table body should has row");
+                // FIXME: body len got a problem
                 let col_len = body.3.len() + 1;
                 let mut bodys = Self::rows2vec(body.3);
                 table.append(&mut bodys);
@@ -44,15 +59,13 @@ impl BlockGal {
                 if !is_matrix {
                     unimplemented!("table can not be a matrix!")
                 };
-                StrTable {
+                Some(StrTable {
                     stream: table,
                     row_size: row_len,
                     col_size: col_len,
-                }
+                })
             }
-            _ => {
-                panic!("not a table block");
-            }
+            _ => None,
         }
     }
 
@@ -81,6 +94,11 @@ impl Pan2Str for Block {
         let inlines = match self {
             Block::Plain(mut v) => std::mem::take(&mut v),
             Block::Para(mut v) => std::mem::take(&mut v),
+            Block::BlockQuote(v) => {
+                let ss: Vec<_> = v.into_iter().filter_map(|b| b.to_string()).collect();
+                let cs: String = ss.iter().flat_map(|s| s.chars()).collect();
+                return Some(cs);
+            }
             _ => {
                 let b_dbg = format!("!!{self:#?}");
                 let b_ty = b_dbg.chars().take_while(|cha| *cha != '(').collect();
@@ -108,6 +126,7 @@ impl Pan2Str for Vec<Inline> {
                 Inline::Image(_, _v, _) => "image".to_string(),
                 Inline::Math(_, v) => v,
                 Inline::Span(_, v) => v.to_string().unwrap_or_default(),
+                Inline::Quoted(_, v) => v.to_string().unwrap_or_default(),
                 // _ => continue,
                 _ => unimplemented!("to str not for this Inline: {:#?}", word),
             };
