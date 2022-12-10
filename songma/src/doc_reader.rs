@@ -40,24 +40,43 @@ impl StrTable {
     }
 }
 
+// FIXME: consumes Block, only deal with table, I know, I know..
 pub struct BlockGal(pub pandoc_ast::Block);
 
 impl BlockGal {
+    pub fn do_para(&self) -> Option<String> {
+        let Block::Para(ref v) = self.0 else {return None};
+        let strongs: Vec<_> = v
+            .clone()
+            .into_iter()
+            .filter_map(|ln| match ln {
+                Inline::Strong(s) => Some(s),
+                _ => None,
+            })
+            .flatten()
+            .collect();
+        strongs.to_string()
+    }
     // return a table with matrix index empowered
     pub fn do_table(self) -> Option<StrTable> {
         match self.0 {
             // head.1 & body.i.2&.3 are rows, .2 is empty empirically
-            pandoc_ast::Block::Table(_, _, _, head, mut body, _) => {
+            Block::Table(_, _, _, head, mut body, _) => {
+                // dbg!(&head.1.len());
                 let mut table = Self::rows2vec(head.1);
                 let row_len = table.len();
+                if row_len == 0 {
+                    return None;
+                };
+                // dbg!(body.len());
                 let body = body.pop().expect("table body should has row");
-                // FIXME: body len got a problem
                 let col_len = body.3.len() + 1;
                 let mut bodys = Self::rows2vec(body.3);
                 table.append(&mut bodys);
                 let is_matrix = table.len() / row_len == col_len;
                 if !is_matrix {
-                    unimplemented!("table can not be a matrix!")
+                    return None;
+                    // unimplemented!("{row_len} {col_len}\n fatal: table can not be a matrix!:")
                 };
                 Some(StrTable {
                     stream: table,
