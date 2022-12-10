@@ -1,36 +1,36 @@
-use indradb::Identifier;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use songma_derive::Vertex;
 
-#[derive(Eq, PartialEq, Clone, Debug, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
 /// rep a report vertex
 pub struct TestReport {
-    /// parsed
-    pub id: Identifier,
+    pub id: Value,
     //FIXME: e.g. generate from "PET foam tensile static test"
-    pub title: Identifier,
+    pub title: Value,
 }
 
-#[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
 pub struct Product {
-    pub client: Identifier,
-    pub dilivered: Value,
+    pub client: Value,
+    pub description: Value,
 }
 
-#[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
 pub struct Sample {
-    pub id: Identifier,
+    pub id: Value,
 }
 
-#[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
 pub struct FailedBody {
-    pub fail_mode: Identifier,
+    pub fail_mode: Value,
 }
 
-#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
 pub struct YoungsModule {
     pub value: f32,
+    // 0,90 for tensile, -180,270 for  compression
+    pub degree: u32,
 }
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
@@ -38,14 +38,14 @@ pub struct ShearModule {
     pub value: f32,
 }
 
-#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
 pub struct FiberContent {
     // %
     pub volume: f32,
     pub mass: f32,
 }
 
-#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
 pub struct TgTemprature {
     // C degree
     pub one_point: f32,
