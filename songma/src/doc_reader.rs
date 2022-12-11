@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use pandoc_ast::{Block, Inline};
 
 pub fn pan_read(p: &str) -> pandoc_ast::Pandoc {
@@ -24,10 +26,22 @@ pub struct StrTable {
 }
 
 impl StrTable {
-    pub fn index(&self, i: usize, j: usize) -> Option<String> {
+    pub fn index(&self, i: usize, j: usize) -> Option<&str> {
         let base = self.row_size * (i - 1);
         let index = j - 1 + base;
-        self.stream[index].clone()
+        let cell = &self.stream[index];
+        let s = cell.as_ref();
+        match s {
+            Some(s) => Some(&s),
+            None => None,
+        }
+    }
+
+    pub fn col(&self, at: usize) -> Vec<Option<&str>> {
+        (1..=self.row_size)
+            .into_iter()
+            .map(|i| self.index(i, at))
+            .collect()
     }
 
     pub fn debugy(&self) {
@@ -165,6 +179,91 @@ impl Pan2Str for Vec<Inline> {
             None
         } else {
             Some(ln)
+        }
+    }
+}
+
+pub struct DocMap {
+    pub map: HashMap<String, Vec<StrTable>>,
+    pub keys: Vec<String>,
+}
+
+impl DocMap {
+    /// generate one from ast
+    pub fn new(ast: pandoc_ast::Pandoc) -> Self {
+        let mut section_table_map: HashMap<String, Vec<StrTable>> = HashMap::new();
+        let mut keys: Vec<String> = vec![];
+        let mut outter_table: Vec<StrTable> = vec![];
+        for b in ast.blocks.into_iter() {
+            let gal = BlockGal(b);
+            match gal.do_para() {
+                // **1. xxx*
+                Some(s) if s.chars().next().unwrap_or_default().is_numeric() => {
+                    keys.push(s);
+                    section_table_map.insert(keys.last().unwrap().clone(), vec![]);
+                }
+                // not a para block
+                None => {
+                    let Some(t) = gal.do_table() else {continue};
+                    if let Some(k) = keys.last().cloned() {
+                        section_table_map.entry(k).and_modify(|ts| ts.push(t));
+                    } else {
+                        outter_table.push(t);
+                    }
+                }
+                // **but what**
+                _ => continue,
+            };
+        }
+        if !outter_table.is_empty() {
+            //FIXME: handcoded key
+            section_table_map.insert("roofless".to_owned(), outter_table);
+        };
+        Self {
+            map: section_table_map,
+            keys,
+        }
+    }
+    // FIXME: might use regex for finer control
+    pub fn tables_under_section(&self, name: &str) -> Vec<&StrTable> {
+        let keys: Vec<_> = self
+            .map
+            .keys()
+            .take_while(|k| {
+                let s = *k;
+                s.as_str().contains(name)
+            })
+            .collect();
+        let tbs: Vec<_> = keys
+            .into_iter()
+            .filter_map(|k| self.map.get(k))
+            .flatten()
+            .collect();
+        tbs
+    }
+
+    /// print to std
+    pub fn dbgy(&self) {
+        for k in &self.keys {
+            self.dbg_table(k);
+        }
+        self.dbg_table("roofless");
+    }
+
+    /// dbg a table
+    pub fn dbg_table(&self, k: &str) {
+        let Some(ts) = self.map.get(k) else {return};
+        println!("{k}");
+        for t in ts {
+            for i in 1..=t.col_size {
+                let mut row = String::new();
+                for j in 1..=t.row_size {
+                    let cell = format!("{}; ", &t.index(i, j).unwrap_or_default());
+                    row.push_str(&cell);
+                }
+                println!("{row}");
+                row.clear()
+            }
         }
     }
 }
