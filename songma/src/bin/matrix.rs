@@ -59,52 +59,7 @@ impl DocMap {
             }
         }
     }
-}
 
-pub fn all_table_fisrt(tables: &Vec<StrTable>) {
-    for i in tables {
-        let s = i.index(1, 1);
-        println!("{s:?}");
-    }
-}
-
-pub fn index_contain(t: &StrTable, i: usize, j: usize, s: &str) -> bool {
-    let Some(cell) = t.index(i, j) else {return false};
-    if cell.contains(s) {
-        // for i in 1..=t.col_size {
-        match t.index(i, j) {
-            Some(s) => println!("{s}"),
-            None => return true,
-        }
-        // }
-        return true;
-    }
-    false
-}
-
-/// print table cell at index $2 $3
-pub fn pan_table(ast: pandoc_ast::Pandoc, args: Vec<String>) {
-    let mut blocks = ast.blocks.into_iter().peekable();
-    let (i, j) = (
-        &args[2].parse::<usize>().unwrap(),
-        &args[3].parse::<usize>().unwrap(),
-    );
-    loop {
-        // begin with a block
-        let Some(pre_table_block) = blocks.next() else { return };
-        // peek a Table
-        let Some(&Block::Table(..)) = blocks.peek() else { continue };
-        let table_title = pre_table_block.to_string();
-        let table_block = blocks.next().unwrap();
-        let table = BlockGal(table_block).do_table().unwrap();
-        dbg!(table_title);
-        dbg!(table.index(*i, *j));
-        'inner: loop {
-            let Some(&Block::Table(..)) = blocks.peek() else { break 'inner };
-            let table_block = blocks.next().unwrap();
-            let table = BlockGal(table_block).do_table().unwrap();
-            // dbg!(table.debugy());
-            dbg!(table.index(*i, *j));
         }
     }
 }
