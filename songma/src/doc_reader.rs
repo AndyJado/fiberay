@@ -20,33 +20,28 @@ pub struct StrTable {
     // row followes a row
     pub stream: Vec<Option<String>>,
     // j bound
-    pub row_size: usize,
+    pub j_bound: usize,
     // i bound
-    pub col_size: usize,
+    pub i_bound: usize,
 }
 
 impl StrTable {
-    pub fn index(&self, i: usize, j: usize) -> Option<&str> {
-        let base = self.row_size * (i - 1);
+    pub fn index(&self, i: usize, j: usize) -> Option<String> {
+        let base = self.j_bound * (i - 1);
         let index = j - 1 + base;
-        let cell = &self.stream[index];
-        let s = cell.as_ref();
-        match s {
-            Some(s) => Some(&s),
-            None => None,
-        }
+        self.stream[index].clone()
     }
 
-    pub fn col(&self, at: usize) -> Vec<Option<&str>> {
-        (1..=self.row_size)
+    pub fn col(&self, j: usize) -> Vec<Option<String>> {
+        (1..=self.i_bound)
             .into_iter()
-            .map(|i| self.index(i, at))
+            .map(|i| dbg!(self.index(i, j)))
             .collect()
     }
 
     pub fn debugy(&self) {
-        for i in 1..=self.col_size {
-            for j in 1..=self.row_size {
+        for i in 1..=self.i_bound {
+            for j in 1..=self.j_bound {
                 let cell = self.index(i, j);
                 dbg!(i, j, cell);
             }
@@ -95,8 +90,8 @@ impl BlockGal {
                 };
                 Some(StrTable {
                     stream: table,
-                    row_size: row_len,
-                    col_size: col_len,
+                    j_bound: row_len,
+                    i_bound: col_len,
                 })
             }
             _ => None,
@@ -229,11 +224,12 @@ impl DocMap {
         let keys: Vec<_> = self
             .map
             .keys()
-            .take_while(|k| {
+            .filter(|k| {
                 let s = *k;
                 s.as_str().contains(name)
             })
             .collect();
+        dbg!(&keys);
         let tbs: Vec<_> = keys
             .into_iter()
             .filter_map(|k| self.map.get(k))
@@ -255,9 +251,9 @@ impl DocMap {
         let Some(ts) = self.map.get(k) else {return};
         println!("{k}");
         for t in ts {
-            for i in 1..=t.col_size {
+            for i in 1..=t.i_bound {
                 let mut row = String::new();
-                for j in 1..=t.row_size {
+                for j in 1..=t.j_bound {
                     let cell = format!("{}; ", &t.index(i, j).unwrap_or_default());
                     row.push_str(&cell);
                 }
