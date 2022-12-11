@@ -44,6 +44,7 @@ impl StrTable {
 pub struct BlockGal(pub pandoc_ast::Block);
 
 impl BlockGal {
+    /// read para ast, return the **stronged word**
     pub fn do_para(&self) -> Option<String> {
         let Block::Para(ref v) = self.0 else {return None};
         let strongs: Vec<_> = v
