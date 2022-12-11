@@ -118,6 +118,15 @@ impl Pan2Str for Block {
                 let cs: String = ss.iter().flat_map(|s| s.chars()).collect();
                 return Some(cs);
             }
+            Block::OrderedList(_, v) => {
+                let ss: Vec<_> = v
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|b| b.to_string())
+                    .collect();
+                let cs: String = ss.iter().flat_map(|s| s.chars()).collect();
+                return Some(cs);
+            }
             _ => {
                 let b_dbg = format!("!!{self:#?}");
                 let b_ty = b_dbg.chars().take_while(|cha| *cha != '(').collect();
@@ -137,7 +146,7 @@ impl Pan2Str for Vec<Inline> {
                 Inline::Emph(v) => v.to_string().unwrap_or_default(),
                 Inline::Space => "_".to_string(),
                 Inline::SoftBreak => "".to_string(),
-                Inline::LineBreak => "\n".to_string(),
+                Inline::LineBreak => "".to_string(),
                 Inline::Subscript(v) => v.to_string().unwrap_or_default(),
                 Inline::Superscript(v) => v.to_string().unwrap_or_default(),
                 Inline::Underline(v) => v.to_string().unwrap_or_default(),
