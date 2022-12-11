@@ -10,10 +10,15 @@ pub struct Machine {
 #[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize, EdgeKey)]
 /// test a sample
 pub struct Test {
+    pub code: String,
     pub standard: String,
     pub description: String,
 }
 
 #[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize, EdgeKey)]
-/// test a sample
+/// 计算
 pub struct Calculate;
+
+#[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize, EdgeKey)]
+/// 密封
+pub struct Sealed;

@@ -1,19 +1,18 @@
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use songma_derive::Vertex;
 
 #[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
 /// rep a report vertex
 pub struct TestReport {
-    pub id: Value,
+    pub id: Option<String>,
     //FIXME: e.g. generate from "PET foam tensile static test"
-    pub title: Value,
+    pub title: Option<String>,
 }
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
 pub struct Product {
-    pub client: Value,
-    pub description: Value,
+    pub client: Option<String>,
+    pub material: Option<String>,
 }
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
@@ -23,7 +22,7 @@ pub struct Sample {
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
 pub struct FailedBody {
-    pub fail_mode: Value,
+    pub fail_mode: String,
 }
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
