@@ -18,7 +18,7 @@ pub struct Product {
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
 pub struct Sample {
-    pub id: Value,
+    pub id: u32,
 }
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]

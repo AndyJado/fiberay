@@ -22,13 +22,14 @@ fn main() {
             _ => continue,
         };
     }
-    for i in keys {
-        let Some(t) = section_table_map.get(&i) else {continue};
-        if t.is_empty() {
-            continue;
-        };
-        println!("{i}");
-        all_table_fisrt(t);
+    for k in keys {
+        let Some(ts) = section_table_map.get(&k) else {continue};
+        println!("{k}");
+        for t in ts {
+            for i in 1..=t.col_size {
+                println!("{}", t.index(i, 1).unwrap_or_default());
+            }
+        }
     }
     println!("======================");
 }

@@ -18,6 +18,7 @@ pub fn vertex_derive(input: TokenStream) -> TokenStream {
             pub fn vertex(&self) -> indradb::Vertex {
                 indradb::Vertex::new(indradb::Identifier::new(#vertex_iden).expect("vertex_iden"))
             }
+
             pub fn vertex_with_property(&self) -> Vec<indradb::BulkInsertItem> {
                 let ver = self.vertex();
                 vec![indradb::BulkInsertItem::Vertex(ver.clone()), #(#bulk_properties)*]
