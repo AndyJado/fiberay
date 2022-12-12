@@ -28,8 +28,6 @@ pub struct FailedBody {
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
 pub struct YoungsModule {
     pub value: f32,
-    // 0,90 for tensile, -180,270 for  compression
-    pub degree: u32,
 }
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]

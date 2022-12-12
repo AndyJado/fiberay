@@ -11,6 +11,8 @@ pub trait TestSuite {
 }
 
 impl TestSuite for crate::doc_reader::DocMap {
+    type Db = indradb::RocksdbDatastore;
+
     fn a_report_bulk(&self, db: &Self::Db) {
         let mut bulks: Vec<BulkInsertItem> = vec![];
         let v_id = |bulk: &Vec<BulkInsertItem>| {
@@ -48,8 +50,6 @@ impl TestSuite for crate::doc_reader::DocMap {
         db.bulk_insert(bulks).expect("bulk insert");
         dbg!(db);
     }
-
-    type Db = indradb::RocksdbDatastore;
 }
 
 fn the_programme_table(mut pograms: Vec<&StrTable>) -> std::io::Result<&StrTable> {
