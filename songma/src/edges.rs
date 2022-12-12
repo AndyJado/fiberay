@@ -17,9 +17,5 @@ pub struct Test {
 }
 
 #[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize, EdgeKey)]
-/// 计算
-pub struct Calculate;
-
-#[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize, EdgeKey)]
 /// 密封
 pub struct Sealed;
