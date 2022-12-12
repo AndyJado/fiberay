@@ -35,7 +35,7 @@ impl StrTable {
     pub fn col(&self, j: usize) -> Vec<Option<String>> {
         (1..=self.i_bound)
             .into_iter()
-            .map(|i| dbg!(self.index(i, j)))
+            .map(|i| self.index(i, j))
             .collect()
     }
 
@@ -229,7 +229,7 @@ impl DocMap {
                 s.as_str().contains(name)
             })
             .collect();
-        dbg!(&keys);
+        // dbg!(&keys);
         let tbs: Vec<_> = keys
             .into_iter()
             .filter_map(|k| self.map.get(k))

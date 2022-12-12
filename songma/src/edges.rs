@@ -11,8 +11,9 @@ pub struct Machine {
 /// test a sample
 pub struct Test {
     pub code: String,
-    pub standard: String,
-    pub description: String,
+    pub instrument: Option<String>,
+    pub standard: Option<String>,
+    pub execution: Option<String>,
 }
 
 #[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize, EdgeKey)]

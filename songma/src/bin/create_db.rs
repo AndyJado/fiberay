@@ -1,12 +1,5 @@
-use indradb::{
-    BulkInsertItem, Datastore, Identifier, MemoryDatastore, RocksdbDatastore, SpecificVertexQuery,
-    Vertex,
-};
+use indradb::{Datastore, Identifier, RocksdbDatastore, SpecificVertexQuery, Vertex};
 use serde_json::json;
-use songma::{
-    edges::Calculate,
-    vertexes::{Sample, ShearModule, YoungsModule},
-};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db_path = &"./image.rdb";
@@ -26,9 +19,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         serde_json::Value::Bool(true),
     )?;
     // derive insert
-    let shear = ShearModule { value: 3232.232 };
-    let shear_v = shear.vertex_with_property();
-    db.bulk_insert(shear_v)?;
 
     println!("{:#?}", db);
     db.sync()?;

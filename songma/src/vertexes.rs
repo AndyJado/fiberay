@@ -17,34 +17,10 @@ pub struct Product {
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
 pub struct Sample {
-    pub id: u32,
+    pub id: Option<String>,
 }
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
 pub struct FailedBody {
-    pub fail_mode: String,
-}
-
-#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
-pub struct YoungsModule {
-    pub value: f32,
-}
-
-#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
-pub struct ShearModule {
-    pub value: f32,
-}
-
-#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
-pub struct FiberContent {
-    // %
-    pub volume: f32,
-    pub mass: f32,
-}
-
-#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Vertex)]
-pub struct TgTemprature {
-    // C degree
-    pub one_point: f32,
-    pub middle_point: f32,
+    pub fail_mode: Option<String>,
 }
