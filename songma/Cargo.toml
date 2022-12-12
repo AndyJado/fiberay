@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-regex = "1.7.0"
 songma_derive = {path = "../songma_derive"}
 pandoc = "0.8.10"
 pandoc_ast = "0.8.2"

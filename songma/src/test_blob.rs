@@ -4,7 +4,6 @@ use crate::vertexes::*;
 use indradb::BulkInsertItem;
 use indradb::Datastore;
 use indradb::Vertex;
-use regex::Regex;
 
 pub trait TestSuite {
     type Db;
