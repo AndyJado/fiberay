@@ -2,12 +2,7 @@ use itertools::Itertools;
 use serde_json::json;
 use std::io::stdin;
 
-use indradb::{
-    Datastore, EdgePropertyQuery, EdgeQueryExt, Identifier, PipePropertyPresenceEdgeQuery,
-    PipePropertyValueEdgeQuery, PipePropertyValueVertexQuery, PropertyPresenceEdgeQuery,
-    PropertyValueEdgeQuery, PropertyValueVertexQuery, RangeVertexQuery, RocksdbDatastore,
-    SpecificVertexQuery, VertexPropertyQuery, VertexQuery, VertexQueryExt,
-};
+use indradb::*;
 use songma::{
     client::AppState,
     vertexes::{Sample, TestReport},
@@ -23,20 +18,8 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 }
 
 fn client(db: &RocksdbDatastore) {
-    // let q_v_f_val = |c: Identifier, v: Value| PropertyValueVertexQuery { name: c, value: v };
-    // let q_v_f = |c: Identifier| PropertyPresenceVertexQuery { name: c };
     let f = |s: &str| Identifier::new(s).expect("typed in wrong code!");
     let q_v_id = |v_id: Identifier| RangeVertexQuery::new().t(v_id);
-    let q_p_of_v = |v_id: Identifier, p_id: Identifier| VertexPropertyQuery {
-        inner: q_v_id(v_id).into(),
-        name: p_id,
-    };
-    let q_e_with_p_id = |ep: Identifier| PropertyPresenceEdgeQuery { name: ep };
-    // edge has e_id out has property value
-    let q_vp_of_ep_out = |ep: Identifier, vp: Identifier| VertexPropertyQuery {
-        inner: q_e_with_p_id(ep).outbound().into(),
-        name: vp,
-    };
     let mut buf = String::new();
     let mut state = AppState::Welcome;
     let q_title_all = q_v_id(TestReport::iden());
