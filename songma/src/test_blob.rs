@@ -41,7 +41,7 @@ impl TestSuite for crate::doc_reader::DocMap {
             let pro_id = v_id(&v_prod);
             let seal_key = Sealed::edgekey(&Sealed, rep_id, pro_id);
             let machine_not_yet = Machine { description: None };
-            let machine_key = machine_not_yet.edgekey(rep_id, pro_id);
+            let machine_key = machine_not_yet.edgekey(pro_id, samp_id);
             bulks.append(&mut v_prod);
             bulks.append(&mut v_rep);
             bulks.append(&mut v_samp);
