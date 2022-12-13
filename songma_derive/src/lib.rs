@@ -15,8 +15,12 @@ pub fn vertex_derive(input: TokenStream) -> TokenStream {
     });
     let expanded = quote! {
         impl #iden {
+            pub fn iden() ->indradb::Identifier {
+                indradb::Identifier::new(#vertex_iden).expect("vertex_iden")
+            }
+
             pub fn vertex(&self) -> indradb::Vertex {
-                indradb::Vertex::new(indradb::Identifier::new(#vertex_iden).expect("vertex_iden"))
+                indradb::Vertex::new(Self::iden())
             }
 
             pub fn vertex_with_property(&self) -> Vec<indradb::BulkInsertItem> {
