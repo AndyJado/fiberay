@@ -27,7 +27,7 @@ impl std::fmt::Display for AppState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
             AppState::Welcome => {
-                "👋\n键盘输入<试验代码>\nT; T0; T90; C0; C90; V; M; A; L; SS; F; I; P; LTTL\n回车 确认 或 Ctrl C 退出👇"
+                "👋 \n键盘输入<试验代码> + 空格 + <材料参数>:\nT90; C0; C90; V; M; A; L; SS; F\n回车 确认 或 Ctrl C 退出👇"
             }
             AppState::Ask => "🙋问吧",
             AppState::Tell => "📖报告地址?",

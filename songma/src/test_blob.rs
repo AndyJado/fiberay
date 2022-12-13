@@ -64,6 +64,7 @@ impl TestSuite for crate::doc_reader::DocMap {
                 // guarantee a body vertex
                 let Some(result_key) = sec_list.find(|&c| c.contains("result")) else {continue};
                 let Some(result_table) = self.map.get(result_key) else {continue};
+                //FIXME: 4 panic
                 let v_body = code.body_from(result_table.last().unwrap());
                 // bulk gen
                 let body_bulk = &mut v_body.vertex_with_property();
@@ -82,7 +83,8 @@ impl TestSuite for crate::doc_reader::DocMap {
 }
 
 fn the_programme_table(mut pograms: Vec<&StrTable>) -> std::io::Result<&StrTable> {
-    if !pograms.len() == 1 {
+    // FIXME: 22errors
+    if !pograms.len() >= 1 {
         panic!("one report should have programe table")
     };
     let Some(pogram) = pograms.pop() else { panic!() };
