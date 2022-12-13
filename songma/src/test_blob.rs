@@ -2,6 +2,7 @@ use crate::doc_reader::StrTable;
 use crate::edges::*;
 use crate::vertexes::*;
 use indradb::BulkInsertItem;
+use indradb::Identifier;
 use indradb::Vertex;
 use serde_json::json;
 
@@ -71,8 +72,8 @@ impl TestSuite for crate::doc_reader::DocMap {
                 let results = &mut code.reult_bulk_from(body_uid, result_table.last().unwrap());
                 let test_bulk = &mut e_test.edge_with_property(sample_id, body_uid);
                 bulks.append(body_bulk);
-                bulks.append(test_bulk);
                 bulks.append(results);
+                bulks.append(test_bulk);
             }
             // if there is a description table
         }
@@ -90,6 +91,22 @@ fn the_programme_table(mut pograms: Vec<&StrTable>) -> std::io::Result<&StrTable
 
 #[derive(Debug)]
 enum TestProgramme {
+    //G1c
+    A,
+    // Tension
+    T,
+    // Tensile lap-shear
+    L,
+    // interlaminar shear
+    SS,
+    // Flexural test
+    F,
+    // Charpy impact
+    I,
+    // T-peel test
+    P,
+    // long term creep
+    LTTL,
     T0,
     T90,
     C0,
@@ -168,12 +185,70 @@ impl TestProgramme {
                 max_min("Fu", 5);
                 max_min("G", 6);
             }
+            T => {
+                max_min("b", 2);
+                max_min("h", 3);
+                max_min("Fm", 4);
+                max_min("Sm", 5);
+            }
+            A => {
+                max_min("b", 2);
+                max_min("h", 3);
+                max_min("G1c", 4);
+                max_min("G1cAv", 5);
+            }
+            L => {
+                max_min("b", 2);
+                max_min("l", 3);
+                max_min("Fm", 4);
+                max_min("Tau", 5);
+            }
+            SS => {
+                max_min("b", 2);
+                max_min("h", 3);
+                max_min("Fm", 4);
+                max_min("Tau", 5);
+            }
+            F => {
+                max_min("b", 2);
+                max_min("h", 3);
+                max_min("Fm", 4);
+                max_min("Sfm", 5);
+                max_min("Ef", 6);
+                max_min("Epf", 7);
+            }
+            I => {
+                max_min("b", 2);
+                max_min("a", 3);
+                // corrected absorbed impact energy
+                max_min("Ec", 4);
+                // charpy impact thoughness
+                max_min("Acu", 5);
+            }
+            P => {
+                max_min("b", 2);
+                max_min("Pm", 3);
+                max_min("Pb", 4);
+                max_min("Pmin", 5);
+                max_min("Mm", 6);
+                max_min("Mave", 7);
+                max_min("Mmin", 8);
+            }
+            LTTL => {
+                max_min("l", 2);
+                max_min("b", 3);
+                max_min("FLT", 4);
+                max_min("L0", 5);
+                max_min("Lz", 6);
+                max_min("dL", 7);
+            }
             _ => {
-                dbg!("some tests results not included");
+                dbg!("not yet this reuslt table");
             }
         }
         bulks
     }
+
     /// a test edge
     fn test_from(&self, tb: Option<&StrTable>) -> Test {
         let (instrument, standard, execution) = if let Some(desc_tb) = tb {
@@ -190,6 +265,7 @@ impl TestProgramme {
             execution,
         }
     }
+
     /// read table a fail body vertex to be
     fn body_from(&self, tb: &StrTable) -> FailedBody {
         use TestProgramme::*;
@@ -201,8 +277,13 @@ impl TestProgramme {
         FailedBody { fail_mode }
     }
 
+    pub fn identifier(&self) -> Identifier {
+        Identifier::new(self.desc()).expect("programme code to desc")
+    }
+
     fn desc(&self) -> String {
         match self {
+            TestProgramme::T => "T",
             TestProgramme::T0 => "TO",
             TestProgramme::T90 => "T90",
             TestProgramme::C0 => "C0",
@@ -210,10 +291,18 @@ impl TestProgramme {
             TestProgramme::V => "V",
             TestProgramme::M => "M",
             TestProgramme::Tg => "Tg",
-            TestProgramme::NotYet => unimplemented!(),
+            TestProgramme::A => "A",
+            TestProgramme::L => "L",
+            TestProgramme::SS => "SS",
+            TestProgramme::F => "F",
+            TestProgramme::I => "I",
+            TestProgramme::P => "P",
+            TestProgramme::NotYet => "NotYet",
+            TestProgramme::LTTL => "LTTL",
         }
         .to_owned()
     }
+
     fn from_code(s: Option<String>) -> Self {
         let Some(s) = s else {return NotYet};
         use TestProgramme::*;
@@ -228,6 +317,22 @@ impl TestProgramme {
             C0
         } else if match_code("T0XX") {
             T0
+        } else if match_code("TXX") {
+            T
+        } else if match_code("FXX") {
+            F
+        } else if match_code("IXX") {
+            I
+        } else if match_code("LXX") {
+            L
+        } else if match_code("AXX") {
+            A
+        } else if match_code("PXX") {
+            P
+        } else if match_code("SSXX") {
+            SS
+        } else if match_code("LTTL_XX") {
+            LTTL
         } else if match_code("VXX") {
             V
         } else {

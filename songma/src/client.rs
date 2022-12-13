@@ -27,12 +27,12 @@ impl std::fmt::Display for AppState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
             AppState::Welcome => {
-                "👋,你好哇,又见面了\n按1问我我知道的\n按2告诉我我不知道的\n Ctrl C 退出"
+                "👋\n键盘输入<试验代码>\nT; T0; T90; C0; C90; V; M; A; L; SS; F; I; P; LTTL\n回车 确认 或 Ctrl C 退出👇"
             }
             AppState::Ask => "🙋问吧",
             AppState::Tell => "📖报告地址?",
             AppState::DarkCorner => "你不该来这的,回去吧",
-            AppState::Walking => "好了,现在呢?",
+            AppState::Walking => "成功,请继续",
         };
         std::write!(f, "{s}")
     }
