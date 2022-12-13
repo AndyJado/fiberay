@@ -87,7 +87,7 @@ impl TestSuite for crate::doc_reader::DocMap {
 
 fn the_programme_table(mut pograms: Vec<&StrTable>) -> std::io::Result<&StrTable> {
     // FIXME: 22errors
-    if !pograms.len() >= 1 {
+    if !pograms.len() == 1 {
         panic!("one report should have programe table")
     };
     let Some(pogram) = pograms.pop() else { panic!() };
