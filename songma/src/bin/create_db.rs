@@ -11,6 +11,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create an in-memory datastore
     let db = RocksdbDatastore::new(db_path, None)?;
     let args: Vec<String> = args().collect();
+    if args.len() == 1 {
+        db.index_property(indradb::Identifier::new("code").unwrap())?;
+        return Ok(());
+    }
     let ast = pan_read(&args[1]);
     let doc_map = DocMap::new(ast);
     let bulks = doc_map.a_report_bulk();
