@@ -4,11 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "songma"
+path = "src/main.rs"
+
 
 [dependencies]
 songma_derive = {path = "../songma_derive"}
 pandoc = "0.8.10"
 pandoc_ast = "0.8.2"
+itertools = "0.10.5"
 indradb-lib = { version = "*", features = ["rocksdb-datastore"] }
 serde = { version = "^1.0.57", features = ["derive"] }
 serde_json = "^1.0.57"

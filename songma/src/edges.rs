@@ -4,7 +4,7 @@ use songma_derive::EdgeKey;
 #[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize, EdgeKey)]
 /// machine a product to sample
 pub struct Machine {
-    pub description: String,
+    pub description: Option<String>,
 }
 
 #[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize, EdgeKey)]
