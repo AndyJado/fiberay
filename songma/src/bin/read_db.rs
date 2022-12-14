@@ -18,35 +18,26 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 }
 
 fn client(db: &RocksdbDatastore) {
-    let f = |s: &str| Identifier::new(s).expect("typed in wrong code!");
-    let q_v_id = |v_id: Identifier| RangeVertexQuery::new().t(v_id);
+    // will interact with loop
     let mut buf = String::new();
     let mut state = AppState::Welcome;
+    // helper closure
+    let f = |s: &str| Identifier::new(s).expect("typed in wrong code!");
+    let q_v_id = |v_id: Identifier| RangeVertexQuery::new().t(v_id);
+    let ppt_v = |q: VertexPropertyQuery| db.get_vertex_properties(q).expect("get ppt from db of v");
+    // general info
     let q_title_all = q_v_id(TestReport::iden());
     let titles = db
-        .get_vertex_properties(VertexPropertyQuery {
-            inner: q_title_all.into(),
-            name: f("title"),
-        })
-        .ok()
-        .unwrap();
-    let mut i_ids = titles.iter().map(|c| c.id);
-    let edge_count = db
-        .get_edge_count(
-            i_ids.next().unwrap(),
-            None,
-            indradb::EdgeDirection::Outbound,
-        )
-        .unwrap();
-    dbg!(edge_count);
-    let uniq_ttl = titles
-        .iter()
-        .filter_map(|p| p.value.as_str())
-        .map(|s| s.to_ascii_lowercase())
-        .unique()
-        .join("\n");
+        .get_vertex_properties(q_title_all.clone().property(f("title")))
+        .expect("report titles from bd");
+    let uniq_ttl = ppts2str(&titles);
     println!("目前已经导入的报告数为:{}\n", titles.len());
     println!("目前可供查询的报告大类为:\n{}", uniq_ttl);
+    let q_product = q_title_all.outbound().inbound().property(f("material"));
+    let producs = db.get_vertex_properties(q_product.into()).unwrap();
+    let uniq_produ = ppts2str(&producs);
+    println!("目前可供查询的材料统有:\n{}", uniq_produ);
+    // daemon
     loop {
         // next run
         buf.clear();
@@ -67,47 +58,66 @@ fn client(db: &RocksdbDatastore) {
                 let Some(ppts) = db.get_vertex_properties(q.into()).ok() else {continue};
                 // dbg!(&ppts);
                 let id_max_min = ppts.iter().map(|vp| {
-                    let query = SpecificVertexQuery::single(vp.id)
+                    let prod_query = SpecificVertexQuery::single(vp.id)
                         .clone()
                         .inbound()
                         .outbound()
                         .t(Sample::iden())
                         .inbound()
                         .outbound()
-                        .t(songma::vertexes::Product::iden())
+                        .t(songma::vertexes::Product::iden());
+                    let rep_query = prod_query
+                        .clone()
                         .inbound()
                         .outbound()
                         .t(songma::vertexes::TestReport::iden());
                     let val = vp.value.as_array().unwrap();
                     let max = val.first().unwrap().as_f64().unwrap();
                     let min = val.last().unwrap().as_f64().unwrap();
-                    (query, (max, min))
+                    (
+                        (
+                            prod_query.property(f("material")),
+                            rep_query.property(f("id")),
+                        ),
+                        (max, min),
+                    )
                 });
                 // so last() return the max
                 let result_list_pop_max: Vec<_> = id_max_min
                     .sorted_by(|zip1, zip2| zip1.1 .0.partial_cmp(&zip2.1 .0).unwrap())
                     .collect();
-                // dbg!(&max_first_result_list);
+                let ((q_v_prod, q_v_rep), (_, max_val)) = result_list_pop_max.last().unwrap();
+                let prod_desc = ppts2str(&ppt_v(q_v_prod.clone()));
+                let report_desc = ppts2str(&ppt_v(q_v_rep.clone()));
+                println!(
+                    "最大值:\n报告:{},产品:{},值:{}",
+                    report_desc, prod_desc, max_val
+                );
 
                 // so last() return min
-                let (q_v_rep, max_val) = result_list_pop_max.last().unwrap();
-                let report_v_max = db
-                    .get_all_vertex_properties(q_v_rep.clone().into())
-                    .unwrap();
-                dbg!(report_v_max.last(), max_val.0);
                 let result_list_pop_min: Vec<_> = result_list_pop_max
                     .into_iter()
                     .sorted_by(|zip1, zip2| zip2.1 .1.partial_cmp(&zip1.1 .1).unwrap())
                     .collect();
-                let (q_v_rep, min_val) = result_list_pop_min.last().unwrap();
-                let report_v_min = db
-                    .get_all_vertex_properties(q_v_rep.clone().into())
-                    .unwrap();
-                dbg!(report_v_min.last(), min_val.1);
+                let ((q_v_prod, q_v_rep), (_, min_val)) = result_list_pop_min.last().unwrap();
+                let prod_desc = ppts2str(&ppt_v(q_v_prod.clone()));
+                let report_desc = ppts2str(&ppt_v(q_v_rep.clone()));
+                println!(
+                    "最小值:\n报告:{},产品:{},值:{}",
+                    report_desc, prod_desc, min_val
+                );
             }
             _ => state.home(),
         }
     }
+}
+
+fn ppts2str(ppts: &Vec<VertexProperty>) -> String {
+    ppts.iter()
+        .filter_map(|p| p.value.as_str())
+        .map(|s| s.to_ascii_lowercase())
+        .unique()
+        .join("\n")
 }
 
 #[test]
