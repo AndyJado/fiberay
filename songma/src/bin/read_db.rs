@@ -65,34 +65,45 @@ fn client(db: &RocksdbDatastore) {
                     .inbound()
                     .property(f(ppt_code));
                 let Some(ppts) = db.get_vertex_properties(q.into()).ok() else {continue};
-                dbg!(&ppts);
+                // dbg!(&ppts);
                 let id_max_min = ppts.iter().map(|vp| {
+                    let query = SpecificVertexQuery::single(vp.id)
+                        .clone()
+                        .inbound()
+                        .outbound()
+                        .t(Sample::iden())
+                        .inbound()
+                        .outbound()
+                        .t(songma::vertexes::Product::iden())
+                        .inbound()
+                        .outbound()
+                        .t(songma::vertexes::TestReport::iden());
                     let val = vp.value.as_array().unwrap();
                     let max = val.first().unwrap().as_f64().unwrap();
-                    let min = val.first().unwrap().as_f64().unwrap();
-                    (SpecificVertexQuery::single(vp.id), (max, min))
+                    let min = val.last().unwrap().as_f64().unwrap();
+                    (query, (max, min))
                 });
-                // so last() give the max
-                let max_first_result_list: Vec<_> = id_max_min
+                // so last() return the max
+                let result_list_pop_max: Vec<_> = id_max_min
                     .sorted_by(|zip1, zip2| zip1.1 .0.partial_cmp(&zip2.1 .0).unwrap())
                     .collect();
-                dbg!(&max_first_result_list);
-                let (v_body, max_val) = max_first_result_list.last().unwrap();
-                let q_v_rep = v_body
-                    .clone()
-                    .inbound()
-                    .outbound()
-                    .t(Sample::iden())
-                    .inbound()
-                    .outbound()
-                    .t(songma::vertexes::Product::iden())
-                    .inbound()
-                    .outbound()
-                    .t(songma::vertexes::TestReport::iden())
-                    .property(f("title"));
-                let report_v = db.get_vertex_properties(q_v_rep.into()).unwrap();
-                dbg!(report_v.last(), max_val);
-                // dbg!(id_max_min);
+                // dbg!(&max_first_result_list);
+
+                // so last() return min
+                let (q_v_rep, max_val) = result_list_pop_max.last().unwrap();
+                let report_v_max = db
+                    .get_all_vertex_properties(q_v_rep.clone().into())
+                    .unwrap();
+                dbg!(report_v_max.last(), max_val.0);
+                let result_list_pop_min: Vec<_> = result_list_pop_max
+                    .into_iter()
+                    .sorted_by(|zip1, zip2| zip2.1 .1.partial_cmp(&zip1.1 .1).unwrap())
+                    .collect();
+                let (q_v_rep, min_val) = result_list_pop_min.last().unwrap();
+                let report_v_min = db
+                    .get_all_vertex_properties(q_v_rep.clone().into())
+                    .unwrap();
+                dbg!(report_v_min.last(), min_val.1);
             }
             _ => state.home(),
         }
