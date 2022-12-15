@@ -282,10 +282,6 @@ impl TestProgramme {
         FailedBody { fail_mode }
     }
 
-    pub fn identifier(&self) -> Identifier {
-        Identifier::new(self.desc()).expect("programme code to desc")
-    }
-
     fn desc(&self) -> String {
         match self {
             TestProgramme::T => "T",

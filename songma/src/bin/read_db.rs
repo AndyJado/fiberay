@@ -1,5 +1,6 @@
 use itertools::Itertools;
 use serde_json::json;
+use simple_excel_writer::Row;
 use std::io::stdin;
 
 use indradb::*;
@@ -8,16 +9,16 @@ use songma::{
     vertexes::{Sample, TestReport},
 };
 
-fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn main() -> anyhow::Result<()> {
     // Create an in-memory datastore
     let p = &"./image.rdb";
     let db = RocksdbDatastore::new(p, None)?;
     // dbg!(title_all);
-    client(&db);
+    client(&db).unwrap();
     Ok(())
 }
 
-fn client(db: &RocksdbDatastore) {
+fn client(db: &RocksdbDatastore) -> anyhow::Result<()> {
     // will interact with loop
     let mut buf = String::new();
     let mut state = AppState::Welcome;
@@ -56,8 +57,8 @@ fn client(db: &RocksdbDatastore) {
                     .inbound()
                     .property(f(ppt_code));
                 let Some(ppts) = db.get_vertex_properties(q.into()).ok() else {continue};
-                // dbg!(&ppts);
-                let id_max_min = ppts.iter().map(|vp| {
+                dbg!(&ppts);
+                let mat_id_max_min = ppts.iter().map(|vp| {
                     let prod_query = SpecificVertexQuery::single(vp.id)
                         .clone()
                         .inbound()
@@ -82,30 +83,24 @@ fn client(db: &RocksdbDatastore) {
                         (max, min),
                     )
                 });
-                // so last() return the max
-                let result_list_pop_max: Vec<_> = id_max_min
-                    .sorted_by(|zip1, zip2| zip1.1 .0.partial_cmp(&zip2.1 .0).unwrap())
-                    .collect();
-                let ((q_v_prod, q_v_rep), (_, max_val)) = result_list_pop_max.last().unwrap();
-                let prod_desc = ppts2str(&ppt_v(q_v_prod.clone()));
-                let report_desc = ppts2str(&ppt_v(q_v_rep.clone()));
-                println!(
-                    "最大值:\n报告:{},产品:{},值:{}",
-                    report_desc, prod_desc, max_val
-                );
-
-                // so last() return min
-                let result_list_pop_min: Vec<_> = result_list_pop_max
-                    .into_iter()
-                    .sorted_by(|zip1, zip2| zip2.1 .1.partial_cmp(&zip1.1 .1).unwrap())
-                    .collect();
-                let ((q_v_prod, q_v_rep), (_, min_val)) = result_list_pop_min.last().unwrap();
-                let prod_desc = ppts2str(&ppt_v(q_v_prod.clone()));
-                let report_desc = ppts2str(&ppt_v(q_v_rep.clone()));
-                println!(
-                    "最小值:\n报告:{},产品:{},值:{}",
-                    report_desc, prod_desc, min_val
-                );
+                dbg!(&mat_id_max_min);
+                let mut excel = simple_excel_writer::Workbook::create("query_result.xlsx");
+                let mut sheet = excel.create_sheet("query1");
+                sheet.add_column(simple_excel_writer::Column { width: 50.0 });
+                sheet.add_column(simple_excel_writer::Column { width: 50.0 });
+                sheet.add_column(simple_excel_writer::Column { width: 50.0 });
+                sheet.add_column(simple_excel_writer::Column { width: 50.0 });
+                excel.write_sheet(&mut sheet, |w| {
+                    w.append_row(simple_excel_writer::row!["id", "mat", "max", "min"])?;
+                    for (i, ((mat_q, id_q), (max, min))) in mat_id_max_min.enumerate() {
+                        let mat = ppts2str(&db.get_vertex_properties(mat_q).unwrap());
+                        let id = ppts2str(&db.get_vertex_properties(id_q).unwrap());
+                        dbg!((&id, &mat, max, min));
+                        w.append_row(simple_excel_writer::row![id, mat, max, min])?;
+                    }
+                    Ok(())
+                })?;
+                excel.close()?;
             }
             _ => state.home(),
         }
