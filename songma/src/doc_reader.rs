@@ -152,7 +152,7 @@ impl Pan2Str for Vec<Inline> {
         let mut ln = String::new();
         for word in self {
             let cat = match word {
-                Inline::Str(s) => s.to_string(),
+                Inline::Str(s) => s,
                 Inline::Emph(v) => v.to_string().unwrap_or_default(),
                 Inline::Space => "_".to_string(),
                 Inline::SoftBreak => "".to_string(),
@@ -165,6 +165,8 @@ impl Pan2Str for Vec<Inline> {
                 Inline::Math(_, v) => v,
                 Inline::Span(_, v) => v.to_string().unwrap_or_default(),
                 Inline::Quoted(_, v) => v.to_string().unwrap_or_default(),
+                Inline::Link(_, v, _) => v.to_string().unwrap_or_default(),
+                Inline::RawInline(_, s) => s,
                 // _ => continue,
                 _ => unimplemented!("to str not for this Inline: {:#?}", word),
             };
