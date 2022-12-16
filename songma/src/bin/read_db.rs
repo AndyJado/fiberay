@@ -1,12 +1,12 @@
 use itertools::Itertools;
 use serde_json::json;
-use simple_excel_writer::Row;
+use simple_excel_writer::{Row, ToCellValue};
 use std::io::stdin;
 
 use indradb::*;
 use songma::{
     client::AppState,
-    vertexes::{Sample, TestReport},
+    vertexes::{Product, Sample, TestReport},
 };
 
 fn main() -> anyhow::Result<()> {
@@ -49,58 +49,63 @@ fn client(db: &RocksdbDatastore) -> anyhow::Result<()> {
         match state {
             AppState::Welcome => {
                 let Some(test_code) = input.next() else {continue};
-                let Some(ppt_code) = input.next() else {continue};
                 let q = q_v_id(Sample::iden())
                     .outbound()
                     .t(f("Test"))
                     .with_property_equal_to(f("code"), json!(test_code))
-                    .inbound()
-                    .property(f(ppt_code));
-                let Some(ppts) = db.get_vertex_properties(q.into()).ok() else {continue};
-                dbg!(&ppts);
-                let mat_id_max_min = ppts.iter().map(|vp| {
-                    let prod_query = SpecificVertexQuery::single(vp.id)
-                        .clone()
-                        .inbound()
-                        .outbound()
-                        .t(Sample::iden())
-                        .inbound()
-                        .outbound()
-                        .t(songma::vertexes::Product::iden());
-                    let rep_query = prod_query
-                        .clone()
-                        .inbound()
-                        .outbound()
-                        .t(songma::vertexes::TestReport::iden());
-                    let val = vp.value.as_array().unwrap();
-                    let max = val.first().unwrap().as_f64().unwrap();
-                    let min = val.last().unwrap().as_f64().unwrap();
-                    (
-                        (
-                            prod_query.property(f("material")),
-                            rep_query.property(f("id")),
-                        ),
-                        (max, min),
-                    )
-                });
-                dbg!(&mat_id_max_min);
+                    .inbound();
+                // failed body ppts vec
+                let Some(mut pptss) = db.get_all_vertex_properties(q.into()).ok() else {continue};
+                let cell_iter = pptss
+                    .iter_mut()
+                    .map(|ppts| {
+                        let v_id = ppts.vertex.id;
+                        let q_prod = SpecificVertexQuery::single(v_id)
+                            .inbound()
+                            .outbound()
+                            .t(Sample::iden())
+                            .inbound()
+                            .outbound()
+                            .t(Product::iden());
+                        let q_rep = q_prod.clone().inbound().outbound().t(TestReport::iden());
+                        let v_ppts = ppts.props.iter_mut();
+                        (q_rep, q_prod, v_ppts)
+                    })
+                    .map(|c| {
+                        let rep_id = db.get_vertex_properties(c.0.property(f("id"))).unwrap();
+                        let prod_mat = db
+                            .get_vertex_properties(c.1.property(f("material")))
+                            .unwrap();
+                        let mut max_min =
+                            c.2.filter(|p| p.name != f("fail_mode"))
+                                .map(|ppt| {
+                                    dbg!(&ppt.value);
+                                    ppt.value
+                                        .as_array()
+                                        .unwrap()
+                                        .into_iter()
+                                        .filter_map(|v| v.as_f64())
+                                        .map(|v| v.to_cell_value())
+                                        .collect_vec()
+                                })
+                                .flatten()
+                                .rev()
+                                .collect_vec();
+                        max_min.push(ppts2str(&prod_mat).to_cell_value());
+                        max_min.push(ppts2str(&rep_id).to_cell_value());
+                        max_min.into_iter().rev()
+                    });
                 let mut excel = simple_excel_writer::Workbook::create("query_result.xlsx");
                 let mut sheet = excel.create_sheet("query1");
-                sheet.add_column(simple_excel_writer::Column { width: 50.0 });
-                sheet.add_column(simple_excel_writer::Column { width: 50.0 });
-                sheet.add_column(simple_excel_writer::Column { width: 50.0 });
-                sheet.add_column(simple_excel_writer::Column { width: 50.0 });
-                excel.write_sheet(&mut sheet, |w| {
-                    w.append_row(simple_excel_writer::row!["id", "mat", "max", "min"])?;
-                    for (i, ((mat_q, id_q), (max, min))) in mat_id_max_min.enumerate() {
-                        let mat = ppts2str(&db.get_vertex_properties(mat_q).unwrap());
-                        let id = ppts2str(&db.get_vertex_properties(id_q).unwrap());
-                        dbg!((&id, &mat, max, min));
-                        w.append_row(simple_excel_writer::row![id, mat, max, min])?;
-                    }
-                    Ok(())
-                })?;
-                excel.close()?;
+                excel
+                    .write_sheet(&mut sheet, |w| {
+                        for i in cell_iter {
+                            w.append_row(Row::from_iter(i)).unwrap();
+                        }
+                        Ok(())
+                    })
+                    .unwrap();
+                excel.close().unwrap();
             }
             _ => state.home(),
         }
